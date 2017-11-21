@@ -1,7 +1,7 @@
 /*
  * =====================================================================================
  *
- *       Filename:  MIDIcontrol_factory.cpp
+ *       Filename:  MIDIcontrol.cpp
  *
  *    Description:  Controls more midicontrols
  *
@@ -10,71 +10,56 @@
  *       Revision:  none
  *       Compiler:  gcc
  *
- *         Author:  ek5.chimenti@gmail.com
- *   Organization:  
+ *         Author:  Ettore Chimenti <ek5.chimenti@gmail.com>
+ *   Organization:  Aidilab Srl.
  *
  * =====================================================================================
  */
 
 #include "MIDIcontrol.h"
-#include <MIDI.h>
 
-status_t MIDIcontrols::checkAll()
+template <class T>
+status_t MIDIcontrols<T>::checkAll()
 {
-	MIDIcontrol* instance;
+	T* instance;
 	value_t value;
-	channel_t channel;
-	control_t control;
 
 	for (int i=0; i<numInstances_ ; i++){
 
 		instance = instances_[i];
-		channel = instance->getChannel();
-		control = instance->getControl();
-
-		value = instance->checkValue();
+		value = instance->check();
 
 		if ( value == RET_ERR ){
-			log("Error: ch %d ctl %d\n", channel, control);
 			return RET_ERR;
 		}
 
 		if ( value != RET_NOTCHANGED ) {
-			//send a control midi packet 
-			instance->controlChange(MIDI_);
-			log("SendMIDI ch %d ctl %d val %d \n", channel, control, value);
+			//send a control midi packet
+			instance->send(MIDI_);
+
 		}
 	}
-
 	return 0;
-
 };
 
-status_t MIDIcontrols::setupAll()
+template <class T>
+status_t MIDIcontrols<T>::setupAll()
 {
-	MIDIcontrol* instance;
-	channel_t channel;
-	control_t control;
+	T* instance;
 
 	for (int i=0; i<numInstances_ ; i++){
-
 		instance = instances_[i];
-		channel = instance->getChannel();
-		control = instance->getControl();
-
 		instance->setup();
-
-		log("Setup ch %d ctl %d \n", channel, control);
 	}
-
 	return 0;
 };
 
-void MIDIcontrols::log(char *fmt, ... ){
-	if (serial_ == NULL) 
+template <class T>
+void MIDIcontrols<T>::log(char *fmt, ... ){
+	if (serial_ == NULL)
 		return ;
 
-	char buf[128]; 
+	char buf[128];
 	va_list args;
 	va_start (args, fmt );
 	vsnprintf(buf, 128, fmt, args);
@@ -82,16 +67,8 @@ void MIDIcontrols::log(char *fmt, ... ){
 	serial_->print(buf);
 }
 
-status_t MIDIcontrols::setLog(Stream * stream){
-	if (stream == NULL) 
-		return RET_ERR;
-
-	serial_ = stream;
-
-	return 0;
-}
-
-status_t MIDIcontrols::add(MIDIcontrol* control){
+template <class T>
+status_t MIDIcontrols<T>::add(T* control){
 
 	if (control == NULL){
 		log("Error: controller is NULL!\n");
@@ -103,24 +80,38 @@ status_t MIDIcontrols::add(MIDIcontrol* control){
 	}
 
 	instances_[numInstances_++] = control;
+	control->parent_ = this;
 
 	return 0;
 }
 
-value_t MIDIcontrol::checkValue(){
+template class MIDIcontrols<MIDIcontrol>;
+template class MIDIcontrols<MIDIprogram>;
+
+value_t MIDIcontrol::check(){
 	value_t value_;
+	value_t meanValue_ = 0;
 
 	value_ = getValue_();
 	if ( value_ == RET_ERR )
 		return RET_ERR;
 
-	if ( value_ != lastValue_ ){
+	valueWindow_[windowIndex] = value_;
+	++windowIndex %= SENSOR_WINDOW;
+
+	//on the fly avg
+	for ( int i=0, n=1 ; i<SENSOR_WINDOW ; i++){
+		meanValue_ += (valueWindow_[i] - meanValue_) / n++;
+	}
+
+	if ( meanValue_ != lastValue_ ){
 		//update value
-		lastValue_ = value_;
-		return value_;
+		lastValue_ = meanValue_;
+		return meanValue_;
 	 } else {
 		return RET_NOTCHANGED;
 	 }
+
 }
 
 MIDIcontrolPot::MIDIcontrolPot (channel_t channel, control_t control, pin_t pin):
@@ -136,6 +127,117 @@ status_t MIDIcontrolPot::setup(){
 
 value_t MIDIcontrolPot::getValue_(){
 	value_t val = analogRead(pin_);
+
 	//map(value, fromLow, fromHigh, toLow, toHigh)
 	return map(val, 0, ADC_RANGE, 0, MIDI_RANGE);
+}
+
+MIDIcontrolButton::MIDIcontrolButton (channel_t channel, control_t control,
+				      pin_t pin, value_t val): pin_(pin), val_(val) {
+		setChCtl(channel, control);
+		type_= TYPE_DIGITAL;
+}
+
+status_t MIDIcontrolButton::setup(){
+	pinMode(pin_, INPUT);
+	return 0;
+}
+
+value_t MIDIcontrolButton::getValue_(){
+	value_t state = digitalRead(pin_);
+
+	//returns val or 0
+	return state ? 0 : val_ ;
+}
+
+#if defined (__arc__)
+MIDIcontrolCurieAcc::MIDIcontrolCurieAcc(channel_t channel, control_t control){
+	setChCtl(channel, control);
+}
+
+status_t MIDIcontrolCurieAcc::setup(){
+	if (!CurieIMU.begin(ACCEL))
+		return RET_ERR;
+
+	CurieIMU.setAccelerometerRange(2);
+	return 0;
+}
+
+value_t MIDIcontrolCurieAcc::getValue_(){
+	float ax,ay,az;
+	CurieIMU.readAccelerometerScaled(ax, ay, az);
+	parent_->log("acc %f, %f, %f \n", ax, ay, az);
+	return sqrt(ax*ax+ay*ay+az*az);
+}
+
+MIDIcontrolCurieGyro::MIDIcontrolCurieGyro(channel_t channel, control_t control){
+	setChCtl(channel, control);
+}
+
+status_t MIDIcontrolCurieGyro::setup(){
+	if (!CurieIMU.begin(GYRO))
+		return RET_ERR;
+
+	CurieIMU.setGyroRange(2);
+	return 0;
+}
+
+value_t MIDIcontrolCurieGyro::getValue_(){
+	float ax,ay,az;
+	CurieIMU.readGyroScaled(ax, ay, az);
+	parent_->log("gyro %f, %f, %f \n", ax, ay, az);
+	return sqrt(ax*ax+ay*ay+az*az);
+}
+#endif
+
+int MIDIprogramButton::instances_ = 0;
+MIDIprogramButton *MIDIprogramButton::btn[4];
+
+void MIDIprogramButton::interruptHandler_0(){
+		btn[0]->programChanged = 1;
+}
+void MIDIprogramButton::interruptHandler_1(){
+		btn[1]->programChanged = 1;
+}
+void MIDIprogramButton::interruptHandler_2(){
+		btn[2]->programChanged = 1;
+}
+void MIDIprogramButton::interruptHandler_3(){
+		btn[3]->programChanged = 1;
+}
+
+status_t MIDIprogramButton::setup(){
+	pinMode(pin_, INPUT);
+
+	switch (instances_){
+	case 0:
+		attachInterrupt(pin_, interruptHandler_0, RISING);
+		break;
+	case 1:
+		attachInterrupt(pin_, interruptHandler_1, RISING);
+		break;
+	case 2:
+		attachInterrupt(pin_, interruptHandler_2, RISING);
+		break;
+	case 3:
+		attachInterrupt(pin_, interruptHandler_3, RISING);
+		break;
+	}
+
+	btn[instances_++] = this;
+
+	return 0;
+}
+
+MIDIprogramButton::MIDIprogramButton (channel_t channel, program_t program,
+				      pin_t pin): pin_(pin) {
+		setChPrg(channel, program);
+}
+
+value_t MIDIprogramButton::check(){
+	if (programChanged){
+		programChanged = 0;
+		return 1;
+	}
+	return RET_NOTCHANGED;
 }
