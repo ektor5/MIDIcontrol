@@ -97,8 +97,13 @@ status_t MIDIcontrols::add(MIDIcontrol* control){
 		log("Error: controller is NULL!\n");
 		return RET_ERR;
 	}
-	numInstances_++;
-	instances_[numInstances_]=control;
+	if (numInstances_ == MAX_INSTANCES){
+		log("Error: Too many instances!\n");
+		return RET_ERR;
+	}
+
+	instances_[numInstances_++] = control;
+
 	return 0;
 }
 
