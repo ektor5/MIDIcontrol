@@ -5,7 +5,7 @@
  *
  *    Description:  Controls more midicontrols
  *
- *        Version:  1.0
+ *        Version:  1.0.0
  *        Created:  06/20/2017 11:52:21 AM
  *       Revision:  none
  *       Compiler:  gcc
