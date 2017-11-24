@@ -19,8 +19,7 @@
 #include "MIDIcontrol.h"
 
 template <class T>
-status_t MIDIcontrols<T>::checkAll()
-{
+status_t MIDIcontrols<T>::checkAll(){
 	T* instance;
 	value_t value;
 
@@ -36,15 +35,13 @@ status_t MIDIcontrols<T>::checkAll()
 		if ( value != RET_NOTCHANGED ) {
 			//send a control midi packet
 			instance->send(MIDI_);
-
 		}
 	}
 	return 0;
 };
 
 template <class T>
-status_t MIDIcontrols<T>::setupAll()
-{
+status_t MIDIcontrols<T>::setupAll(){
 	T* instance;
 
 	for (int i=0; i<numInstances_ ; i++){
