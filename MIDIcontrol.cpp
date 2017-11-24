@@ -87,19 +87,14 @@ template class MIDIcontrols<MIDIprogram>;
 
 value_t MIDIcontrol::check(){
 	value_t value_;
-	value_t meanValue_ = 0;
+	value_t meanValue_;
 
 	value_ = getValue_();
 	if ( value_ == RET_ERR )
 		return RET_ERR;
 
-	valueWindow_[windowIndex] = value_;
-	++windowIndex %= SENSOR_WINDOW;
-
 	//on the fly avg
-	for ( int i=0, n=1 ; i<SENSOR_WINDOW ; i++){
-		meanValue_ += (valueWindow_[i] - meanValue_) / n++;
-	}
+	meanValue_ = ( lastValue_ * SENSOR_WINDOW + value_ ) / (SENSOR_WINDOW + 1);
 
 	if ( meanValue_ != lastValue_ ){
 		//update value
@@ -208,16 +203,16 @@ status_t MIDIprogramButton::setup(){
 
 	switch (instances_){
 	case 0:
-		attachInterrupt(pin_, interruptHandler_0, RISING);
+		attachInterrupt(pin_, interruptHandler_0, FALLING);
 		break;
 	case 1:
-		attachInterrupt(pin_, interruptHandler_1, RISING);
+		attachInterrupt(pin_, interruptHandler_1, FALLING);
 		break;
 	case 2:
-		attachInterrupt(pin_, interruptHandler_2, RISING);
+		attachInterrupt(pin_, interruptHandler_2, FALLING);
 		break;
 	case 3:
-		attachInterrupt(pin_, interruptHandler_3, RISING);
+		attachInterrupt(pin_, interruptHandler_3, FALLING);
 		break;
 	}
 

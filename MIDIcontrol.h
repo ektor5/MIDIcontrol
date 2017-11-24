@@ -104,8 +104,6 @@ public:
 	MIDIcontrols<MIDIcontrol> * parent_;
 
 protected:
-	value_t valueWindow_[SENSOR_WINDOW];
-	int windowIndex = 0;
 	type_t type_;
 	value_t lastValue_;
 	channel_t channel_;
