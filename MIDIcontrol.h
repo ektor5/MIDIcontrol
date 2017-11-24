@@ -52,6 +52,7 @@ typedef void (* programcb) (channel_t, program_t, value_t);
 #define TYPE_DIGITAL 1
 
 #define SENSOR_WINDOW 5
+#define DEBOUNCE_TIME 250
 
 class MIDIcontrol;
 
@@ -199,6 +200,7 @@ public:
 	MIDIprogramButton(channel_t channel, program_t program, pin_t pin);
 protected:
 	pin_t pin_;
+	unsigned int lastPressTime_;
 	static int instances_;
 	static MIDIprogramButton *btn[4];
 };

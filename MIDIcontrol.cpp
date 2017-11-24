@@ -227,9 +227,19 @@ MIDIprogramButton::MIDIprogramButton (channel_t channel, program_t program,
 }
 
 value_t MIDIprogramButton::check(){
+	unsigned int lifetime, tried;
+
 	if (programChanged){
 		programChanged = 0;
-		return 1;
+
+		tried = millis();
+		lifetime = tried - lastPressTime_;
+
+		if (lifetime > DEBOUNCE_TIME){
+			lastPressTime_ = tried;
+			return 1;
+		}
 	}
+
 	return RET_NOTCHANGED;
 }
