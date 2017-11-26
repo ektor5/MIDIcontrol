@@ -124,7 +124,7 @@ value_t MIDIcontrolPot::getValue_(){
 	value_t val = analogRead(pin_);
 
 	//map(value, fromLow, fromHigh, toLow, toHigh)
-	return map(val, 0, ADC_RANGE, 0, MIDI_RANGE);
+	return map(val, 0, ADC_RANGE, 0, outRange_);
 }
 
 MIDIcontrolButton::MIDIcontrolButton (channel_t channel, control_t control,

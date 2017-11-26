@@ -98,6 +98,11 @@ public:
 	inline void setCallback (controlcb cb){
 		callback = cb;
 	};
+	inline void setOutRange(value_t outRange){
+		if ( (outRange > MIDI_RANGE) && (outRange < 0) )
+			return;
+		outRange_ = outRange;
+	}
 	inline void setNumVal(value_t numVal){
 		numVal_ = numVal;
 	}
@@ -113,6 +118,7 @@ protected:
 	value_t numVal_ = SENSOR_WINDOW;
 	channel_t channel_;
 	control_t control_;
+	value_t outRange_ = MIDI_RANGE;
 	virtual value_t getValue_();
 	inline void setChCtl(channel_t channel, control_t control){
 		channel_ = channel;
