@@ -16,8 +16,12 @@
 #define PIN_Y_AXIS A0
 #define PIN_X_AXIS A1
 #define PIN_BUTTON_AXIS 8
-#define PIN_BUTTON_A 5
+#define PIN_BUTTON_A 2
 #define PIN_BUTTON_B 3
+#define PIN_BUTTON_C 4
+#define PIN_BUTTON_D 5
+#define PIN_BUTTON_E 6
+#define PIN_BUTTON_F 7
 
 // Value of the button, if pressed
 #define VALUE_BUTTON_AXIS 127
@@ -31,6 +35,7 @@
 // Instance the containers depending on the MIDI packet
 MIDIcontrols<MIDIcontrol> axis;
 MIDIcontrols<MIDIcontrol> accgyro;
+MIDIcontrols<MIDIcontrol> looper;
 MIDIcontrols<MIDIprogram> buttons;
 
 MIDI_CREATE_DEFAULT_INSTANCE();
@@ -49,26 +54,37 @@ void setup()
 #else
 	axis.midi(&MIDI);
 	buttons.midi(&MIDI);
+	looper.midi(&MIDI);
 	accgyro.midi(&MIDI);
 #endif
 
 	// Objects can be defined and then added
-	MIDIcontrol * yaxis = new MIDIcontrolPot(0x01, 0x01, PIN_Y_AXIS);
-	MIDIcontrol * xaxis = new MIDIcontrolPot(0x01, 0x02, PIN_X_AXIS);
-	MIDIcontrol * baxis = new MIDIcontrolButton(0x01, 0x03, PIN_BUTTON_AXIS, VALUE_BUTTON_AXIS);
+	MIDIcontrol * yaxis = new MIDIcontrolPot(0x01, 0x0c, PIN_Y_AXIS);
+	MIDIcontrol * xaxis = new MIDIcontrolPot(0x01, 0x16, PIN_X_AXIS);
+	MIDIcontrol * baxis = new MIDIcontrolButton(0x01, 0x12, PIN_BUTTON_AXIS, VALUE_BUTTON_AXIS);
 	axis.add( yaxis );
 	axis.add( xaxis );
 	axis.add( baxis );
 
+	MIDIcontrol * abtn = new MIDIcontrolButton(0x01, 0x19, PIN_BUTTON_A, VALUE_BUTTON_AXIS);
+	MIDIcontrol * bbtn = new MIDIcontrolButton(0x01, 0x1a, PIN_BUTTON_B, VALUE_BUTTON_AXIS);
+	MIDIcontrol * cbtn = new MIDIcontrolButton(0x01, 0x1b, PIN_BUTTON_C, VALUE_BUTTON_AXIS);
+	MIDIcontrol * dbtn = new MIDIcontrolButton(0x01, 0x21, PIN_BUTTON_D, VALUE_BUTTON_AXIS);
+	looper.add( abtn );
+	looper.add( bbtn );
+	looper.add( cbtn );
+	looper.add( dbtn );
+
 	// ...or directly inserted into the container
-	buttons.add( new MIDIprogramButton(0x01, PRG_NEXT, PIN_BUTTON_A) );
-	buttons.add( new MIDIprogramButton(0x01, PRG_PREV, PIN_BUTTON_B) );
-	accgyro.add( new MIDIcontrolCurieAcc (0x01, 0x04) );
-	accgyro.add( new MIDIcontrolCurieGyro(0x01, 0x05) );
+	buttons.add( new MIDIprogramButton(0x01, PRG_NEXT, PIN_BUTTON_E) );
+	buttons.add( new MIDIprogramButton(0x01, PRG_PREV, PIN_BUTTON_F) );
+	accgyro.add( new MIDIcontrolCurieAcc (0x01, 0x28) );
+	accgyro.add( new MIDIcontrolCurieGyro(0x01, 0x29) );
 
 	// Setup all the sensors at once
 	axis.setupAll();
 	buttons.setupAll();
+	looper.setupAll();
 	accgyro.setupAll();
 }
 
@@ -77,6 +93,7 @@ void loop()
 	// Check the values of sensors and send MIDI packets
 	axis.checkAll();
 	buttons.checkAll();
+	looper.checkAll();
 	accgyro.checkAll();
 
 	delay(50);
