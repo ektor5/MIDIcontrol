@@ -86,20 +86,23 @@ template class MIDIcontrols<MIDIcontrol>;
 template class MIDIcontrols<MIDIprogram>;
 
 value_t MIDIcontrol::check(){
-	value_t value_;
-	value_t meanValue_;
+	value_t value;
+	value_t meanValue;
 
-	value_ = getValue_();
-	if ( value_ == RET_ERR )
+	value = getValue_();
+	if ( value == RET_ERR )
 		return RET_ERR;
 
 	//on the fly avg
-	meanValue_ = ( lastValue_ * SENSOR_WINDOW + value_ ) / (SENSOR_WINDOW + 1);
+	if (numVal_ > 1)
+		meanValue = ( lastValue_ * numVal_ + value ) / (numVal_ + 1);
+	else
+		meanValue = value;
 
-	if ( meanValue_ != lastValue_ ){
+	if ( meanValue != lastValue_ ){
 		//update value
-		lastValue_ = meanValue_;
-		return meanValue_;
+		lastValue_ = meanValue;
+		return meanValue;
 	 } else {
 		return RET_NOTCHANGED;
 	 }

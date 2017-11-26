@@ -51,7 +51,7 @@ typedef void (* programcb) (channel_t, program_t, value_t);
 #define TYPE_ANALOG 0
 #define TYPE_DIGITAL 1
 
-#define SENSOR_WINDOW 5
+#define SENSOR_WINDOW 3
 #define DEBOUNCE_TIME 250
 
 class MIDIcontrol;
@@ -98,6 +98,9 @@ public:
 	inline void setCallback (controlcb cb){
 		callback = cb;
 	};
+	inline void setNumVal(value_t numVal){
+		numVal_ = numVal;
+	}
 
 	//callback
 	controlcb callback;
@@ -106,7 +109,8 @@ public:
 
 protected:
 	type_t type_;
-	value_t lastValue_;
+	value_t lastValue_ = 0;
+	value_t numVal_ = SENSOR_WINDOW;
 	channel_t channel_;
 	control_t control_;
 	virtual value_t getValue_();
