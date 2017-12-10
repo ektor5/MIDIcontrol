@@ -175,6 +175,26 @@ private:
 	value_t getValue_();
 };
 
+class MIDIcontrolSwitchButton : public MIDIcontrol
+{
+public:
+	volatile int controlSwitchChanged;
+	static void interruptHandler_0();
+	static void interruptHandler_1();
+	static void interruptHandler_2();
+	static void interruptHandler_3();
+	status_t setup();
+	MIDIcontrolSwitchButton(channel_t channel, control_t control, pin_t pin);
+	MIDIcontrolSwitchButton(channel_t channel, control_t control, pin_t pin, value_t val);
+protected:
+	pin_t pin_;
+	value_t val_;
+	value_t getValue_();
+	unsigned int lastPressTime_;
+	static int instances_;
+	static MIDIcontrolSwitchButton *btn[4];
+};
+
 class MIDIprogram
 {
 public:

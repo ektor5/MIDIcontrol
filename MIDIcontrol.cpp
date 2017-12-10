@@ -185,6 +185,80 @@ value_t MIDIcontrolCurieGyro::getValue_(){
 }
 #endif
 
+int MIDIcontrolSwitchButton::instances_ = 0;
+MIDIcontrolSwitchButton *MIDIcontrolSwitchButton::btn[4];
+
+void MIDIcontrolSwitchButton::interruptHandler_0(){
+		btn[0]->controlSwitchChanged = 1;
+}
+void MIDIcontrolSwitchButton::interruptHandler_1(){
+		btn[1]->controlSwitchChanged = 1;
+}
+void MIDIcontrolSwitchButton::interruptHandler_2(){
+		btn[2]->controlSwitchChanged = 1;
+}
+void MIDIcontrolSwitchButton::interruptHandler_3(){
+		btn[3]->controlSwitchChanged = 1;
+}
+
+status_t MIDIcontrolSwitchButton::setup(){
+	pinMode(pin_, INPUT);
+
+	switch (instances_){
+	case 0:
+		attachInterrupt(pin_, interruptHandler_0, FALLING);
+		break;
+	case 1:
+		attachInterrupt(pin_, interruptHandler_1, FALLING);
+		break;
+	case 2:
+		attachInterrupt(pin_, interruptHandler_2, FALLING);
+		break;
+	case 3:
+		attachInterrupt(pin_, interruptHandler_3, FALLING);
+		break;
+	default:
+		return RET_ERR;
+	}
+
+	btn[instances_++] = this;
+
+	//no avg
+	numVal_ = 1;
+
+	return 0;
+}
+
+MIDIcontrolSwitchButton::MIDIcontrolSwitchButton (channel_t channel, control_t control,
+				      pin_t pin): pin_(pin), val_(1) {
+		setChCtl(channel, control);
+}
+
+MIDIcontrolSwitchButton::MIDIcontrolSwitchButton (channel_t channel, control_t control,
+				      pin_t pin, value_t val): pin_(pin), val_(val) {
+		setChCtl(channel, control);
+}
+
+value_t MIDIcontrolSwitchButton::getValue_(){
+	unsigned int lifetime, tried;
+
+	if (controlSwitchChanged){
+		controlSwitchChanged = 0;
+
+		tried = millis();
+		lifetime = tried - lastPressTime_;
+
+		if (lifetime > DEBOUNCE_TIME){
+			lastPressTime_ = tried;
+
+			// switch
+			return lastValue_ ? 0 : val_;
+		}
+	}
+
+	return lastValue_;
+}
+
 int MIDIprogramButton::instances_ = 0;
 MIDIprogramButton *MIDIprogramButton::btn[4];
 
