@@ -28,6 +28,9 @@
 #include <CurieIMU.h>
 #endif
 
+class MIDIcontrol;
+class MIDIprogram;
+
 typedef int status_t;
 typedef int type_t;
 typedef int channel_t;
@@ -36,8 +39,8 @@ typedef int program_t;
 typedef int value_t;
 typedef uint8_t i2caddr_t;
 typedef uint8_t pin_t;
-typedef void (* controlcb) (channel_t, control_t, value_t);
-typedef void (* programcb) (channel_t, program_t, value_t);
+typedef void (* controlcb) (MIDIcontrol *);
+typedef void (* programcb) (MIDIprogram *);
 
 #define RET_ERR -256
 #define RET_OK  0
@@ -54,7 +57,6 @@ typedef void (* programcb) (channel_t, program_t, value_t);
 #define SENSOR_WINDOW 3
 #define DEBOUNCE_TIME 250
 
-class MIDIcontrol;
 #define IR_SAMPLES 25
 #define IR_MIN 3
 #define IR_MAX 31
@@ -93,13 +95,16 @@ public:
 	inline void send(midi::MidiInterface<HardwareSerial>* MIDI_) {
 		parent_->log("sendMIDI_CtlCh ch %d ctl %d val %d \n", channel_,
 			     control_, lastValue_);
+		if (callback_ != NULL){
+			callback_(this);
+		}
 
 		if (MIDI_ != NULL ){
 			MIDI_->sendControlChange(control_, lastValue_, channel_);
 		}
 	};
 	inline void setCallback (controlcb cb){
-		callback = cb;
+		callback_ = cb;
 	};
 	inline void setOutRange(value_t outRange){
 		if ( (outRange > MIDI_RANGE) && (outRange < 0) )
@@ -109,9 +114,6 @@ public:
 	inline void setNumVal(value_t numVal){
 		numVal_ = numVal;
 	}
-
-	//callback
-	controlcb callback;
 
 	MIDIcontrols<MIDIcontrol> * parent_;
 
@@ -127,6 +129,9 @@ protected:
 		channel_ = channel;
 		control_ = control;
 	};
+
+	//callback
+	controlcb callback_ = NULL;
 
 };
 
@@ -219,11 +224,19 @@ public:
 	inline channel_t getChannel(){ return channel_; };
 	inline control_t getProgram(){ return program_; };
 	inline void send(midi::MidiInterface<HardwareSerial> * MIDI_) {
+		if (parent_ != NULL){
 		parent_->log("sendMIDI_PrgCh ch %d prg %d \n", channel_,
 			     program_);
+		}
+		if (callback_ != NULL){
+			callback_(this);
+		}
 		if (MIDI_ != NULL ){
 			MIDI_->sendProgramChange(program_, channel_);
 		}
+	}
+	inline void setCallback( programcb callback ){
+		callback_ = callback;
 	}
 	inline void setChannel(channel_t channel){
 		channel_ = channel;
@@ -235,6 +248,7 @@ public:
 protected:
 	channel_t channel_;
 	program_t program_;
+	programcb callback_ = NULL;
 };
 
 class MIDIprogramButton : public MIDIprogram
