@@ -99,8 +99,9 @@ public:
 			callback_(this);
 		}
 
-		if (MIDI_ != NULL ){
+		if (MIDI_ != NULL){
 			MIDI_->sendControlChange(control_, lastValue_, channel_);
+			delay(20);
 		}
 	};
 	inline void setCallback (controlcb cb){
