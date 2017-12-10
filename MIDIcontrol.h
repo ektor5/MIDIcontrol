@@ -216,6 +216,8 @@ class MIDIprogram
 public:
 	virtual status_t setup();
 	virtual value_t check();
+	inline channel_t getChannel(){ return channel_; };
+	inline control_t getProgram(){ return program_; };
 	inline void send(midi::MidiInterface<HardwareSerial> * MIDI_) {
 		parent_->log("sendMIDI_PrgCh ch %d prg %d \n", channel_,
 			     program_);
@@ -223,14 +225,16 @@ public:
 			MIDI_->sendProgramChange(program_, channel_);
 		}
 	}
+	inline void setChannel(channel_t channel){
+		channel_ = channel;
+	}
+	inline void setProgram(program_t program){
+		program_ = program;
+	}
 	MIDIcontrols<MIDIprogram> * parent_;
 protected:
 	channel_t channel_;
 	program_t program_;
-	inline void setChPrg(channel_t channel, program_t program){
-		channel_ = channel;
-		program_ = program;
-	}
 };
 
 class MIDIprogramButton : public MIDIprogram

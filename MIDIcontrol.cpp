@@ -366,7 +366,8 @@ status_t MIDIprogramButton::setup(){
 
 MIDIprogramButton::MIDIprogramButton (channel_t channel, program_t program,
 				      pin_t pin): pin_(pin) {
-		setChPrg(channel, program);
+		setChannel(channel);
+		setProgram(program);
 }
 
 value_t MIDIprogramButton::check(){
