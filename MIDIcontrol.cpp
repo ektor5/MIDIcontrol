@@ -185,6 +185,70 @@ value_t MIDIcontrolCurieGyro::getValue_(){
 }
 #endif
 
+// part of this object is taken from https://github.com/guillaume-rico/SharpIR
+MIDIcontrolIRSharp::MIDIcontrolIRSharp (channel_t channel, control_t control,
+				      pin_t pin): pin_(pin) {
+		setChCtl(channel, control);
+		type_= TYPE_ANALOG;
+}
+
+status_t MIDIcontrolIRSharp::setup(){
+	pinMode(pin_, INPUT);
+	return 0;
+}
+
+value_t MIDIcontrolIRSharp::getValue_(){
+	int val;
+	val = distance();
+
+	return map(val, IR_MIN, IR_MAX, 0, outRange_);
+}
+
+// Sort an array
+void MIDIcontrolIRSharp::sort(int a[], int size) {
+    for(int i=0; i<(size-1); i++) {
+        bool flag = true;
+        for(int o=0; o<(size-(i+1)); o++) {
+            if(a[o] > a[o+1]) {
+                int t = a[o];
+                a[o] = a[o+1];
+                a[o+1] = t;
+                flag = false;
+            }
+        }
+        if (flag) break;
+    }
+}
+
+value_t MIDIcontrolIRSharp::distance() {
+    int ir_val[IR_SAMPLES];
+    int mapped;
+    int distanceCM;
+
+    for (int i=0; i<IR_SAMPLES; i++){
+        // Read analog value
+        ir_val[i] = analogRead(pin_);
+    }
+    
+    // Sort
+    sort(ir_val,IR_SAMPLES);
+
+    // FIXME: Maybe for Arduino 101 5000 is too high (should be 3300?)
+    mapped = map(ir_val[IR_SAMPLES / 2], 0, 1023, 0, 5000);
+
+    //GP2YA41SK0F
+    distanceCM = 12.08 * pow(mapped / 1000.0, -1.058);
+
+    // TODO: Add other types
+
+    if ( distanceCM < IR_MIN )
+	    return IR_MIN;
+    else if ( distanceCM > IR_MAX )
+	    return IR_MAX;
+
+    return distanceCM;
+}
+
 int MIDIcontrolSwitchButton::instances_ = 0;
 MIDIcontrolSwitchButton *MIDIcontrolSwitchButton::btn[4];
 

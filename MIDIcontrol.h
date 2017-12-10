@@ -55,6 +55,9 @@ typedef void (* programcb) (channel_t, program_t, value_t);
 #define DEBOUNCE_TIME 250
 
 class MIDIcontrol;
+#define IR_SAMPLES 25
+#define IR_MIN 3
+#define IR_MAX 31
 
 template <class T>
 class MIDIcontrols
@@ -193,6 +196,19 @@ protected:
 	unsigned int lastPressTime_;
 	static int instances_;
 	static MIDIcontrolSwitchButton *btn[4];
+};
+
+class MIDIcontrolIRSharp: public MIDIcontrol
+{
+public:
+	status_t setup();
+	MIDIcontrolIRSharp(channel_t channel, control_t control, pin_t pin);
+protected:
+	pin_t pin_;
+	int ir_val[IR_SAMPLES];
+	value_t getValue_();
+	void sort(int a[], int size);
+	value_t distance();
 };
 
 class MIDIprogram
