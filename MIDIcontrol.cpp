@@ -355,6 +355,8 @@ status_t MIDIprogramButton::setup(){
 	case 3:
 		attachInterrupt(pin_, interruptHandler_3, FALLING);
 		break;
+	default:
+		return RET_ERR;
 	}
 
 	btn[instances_++] = this;
